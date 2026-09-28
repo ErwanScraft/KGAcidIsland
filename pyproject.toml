@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "endstone-kg-acid-island"
+name = "endstone-kgacidisland"
 version = "0.1.0"
 description = "Acid Island gameplay for KG Survival."
 authors = [
