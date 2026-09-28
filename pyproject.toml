@@ -14,7 +14,7 @@ dependencies = [
     "endstone>=0.11.11,<0.12",
 ]
 
-[project.entry-points."endstone"]
+[project.entry-points.endstone]
 kgacidisland = "kgacidisland:KGAcidIsland"
 
 [tool.hatch.build.targets.wheel]
@@ -22,5 +22,5 @@ packages = ["src/kgacidisland"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "resources/config.yml" = "kgacidisland/config.yml"
-"resources/messages.yml" = "kgacidisland/messages.yml"
+"resources/message.yml" = "kgacidisland/message.yml"
 "resources/starter.yml" = "kgacidisland/starter.yml"

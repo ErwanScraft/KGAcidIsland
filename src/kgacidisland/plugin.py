@@ -10,10 +10,12 @@ from .utils.messages import MessageManager
 
 
 class KGAcidIsland(Plugin):
-    api_version = "0.11"
-
+    name = "KGAcidIsland"
+    version = "0.1.0"
+    authors = ["ErwanScraft"]
+    description = "Acid Island gameplay for KG Survival."
     prefix = "KGAcidIsland"
-
+    
     commands = {
         "island": {
             "description": "Manage your Acid Island.",
@@ -36,44 +38,50 @@ class KGAcidIsland(Plugin):
     }
 
     def on_enable(self) -> None:
-        self.config_manager = ConfigManager(self)
-        self.config_manager.load()
-
-        self.messages = MessageManager(
-            self.config_manager
-        )
-
-        self.island_manager = IslandManager(self)
-        self.island_manager.load()
-
-        self.island_template = IslandTemplate(self)
-
-        self.island_handler = IslandHandler(self)
-        self.toxic_water_handler = ToxicWaterHandler(self)
-
-        self.register_events(self)
-
+        self._load_resources()
+        self._load_configuration()
+        self._load_messages()
+        self._initialize_handlers()
+    
+        self._register_commands()
         self.toxic_water_handler.start()
-
+    
         self.logger.info(
-            "KGAcidIsland v0.1.0 enabled."
+            f"{self.name} v{self.version} enabled."
         )
         self.logger.info(
             "Loaded %d island(s).",
-            len(self.island_manager._islands),
+            self.island_manager.count,
         )
-
-    def on_command(
-        self,
-        sender: CommandSender,
-        command: Command,
-        args: list[str],
-    ) -> bool:
-        if command.name == "island":
-            return self.island_handler.handle(
-                sender,
-                command,
-                args,
-            )
-
-        return False
+    
+    
+    def _load_resources(self) -> None:
+        self.save_resources("config.yml")
+        self.save_resources("message.yml")
+        self.save_resources("starter.yml")
+    
+    
+    def _load_configuration(self) -> None:
+        self.config_manager = ConfigManager(self)
+        self.config_manager.load()
+    
+        self.island_manager = IslandManager(self)
+        self.island_manager.load()
+    
+    
+    def _load_messages(self) -> None:
+        self.messages = KGAcidIslandMessages(self)
+    
+    
+    def _initialize_handlers(self) -> None:
+        self.island_template = IslandTemplate(self)
+    
+        self.island_handler = IslandHandler(self)
+        self.toxic_water_handler = ToxicWaterHandler(self)
+    
+    
+    def _register_commands(self) -> None:
+        command = self.get_command("island")
+    
+        if command is not None:
+            command.executor = self.island_handler

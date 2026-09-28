@@ -1,41 +1,108 @@
-import re
+from pathlib import Path
+
+import yaml
 
 
-class MessageManager:
-    _COLOR_PATTERN = re.compile(r"&([0-9a-fk-or])")
+class KGAcidIslandMessages:
+    def __init__(self, plugin) -> None:
+        self.plugin = plugin
+        self.path = Path(plugin.data_folder) / "message.yml"
 
-    def __init__(self, config):
-        self._messages = config.messages
-        self._prefix = config.config.get("messages", {}).get(
-            "prefix",
-            "&8[&bKGAcid&8] ",
-        )
+        self._load()
 
-    def get(self, path: str, **placeholders) -> str:
-        value = self._messages
+    def _load(self) -> None:
+        try:
+            with self.path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                data = yaml.safe_load(file) or {}
+
+        except (
+            OSError,
+            yaml.YAMLError,
+        ) as error:
+            self.plugin.logger.error(
+                f"Failed to load message.yml: {error}"
+            )
+            self.data = {}
+            return
+
+        if not isinstance(data, dict):
+            self.plugin.logger.error(
+                "message.yml must contain a YAML mapping."
+            )
+            self.data = {}
+            return
+
+        self.data = data
+
+    def get(
+        self,
+        path: str,
+        default: str = "",
+    ) -> str:
+        value = self.data
 
         for key in path.split("."):
             if not isinstance(value, dict):
-                return ""
+                return default
 
-            value = value.get(key, "")
+            if key not in value:
+                return default
+
+            value = value[key]
 
         if not isinstance(value, str):
+            return default
+
+        return value
+
+    def format(
+        self,
+        path: str,
+        default: str = "",
+        **values,
+    ) -> str:
+        message = self.get(
+            path,
+            default,
+        )
+
+        if not message:
             return ""
 
-        message = self._prefix + value
-
-        for key, replacement in placeholders.items():
-            message = message.replace(
-                "{" + key + "}",
-                str(replacement),
+        try:
+            return message.format(
+                **values,
             )
+        except (
+            KeyError,
+            ValueError,
+        ):
+            return message
 
-        return self._colorize(message)
-
-    @classmethod
-    def _colorize(cls, message: str) -> str:
-        return cls._COLOR_PATTERN.sub(
-            lambda match: f"§{match.group(1)}",
-            message,
+    def prefixed(
+        self,
+        path: str,
+        default: str = "",
+        **values,
+    ) -> str:
+        prefix = self.get(
+            "prefix",
+            "",
         )
+
+        message = self.format(
+            path,
+            default,
+            **values,
+        )
+
+        if not message:
+            return prefix
+
+        if not prefix:
+            return message
+
+        return f"{prefix} §r{message}"

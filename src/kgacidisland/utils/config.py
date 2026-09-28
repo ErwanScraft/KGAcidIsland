@@ -4,31 +4,111 @@ import yaml
 
 
 class ConfigManager:
-    def __init__(self, plugin):
+    def __init__(self, plugin) -> None:
         self.plugin = plugin
-        self.data_path = Path(plugin.data_folder)
+        self.path = Path(plugin.data_folder) / "config.yml"
 
-        self.config_path = self.data_path / "config.yml"
-        self.messages_path = self.data_path / "messages.yml"
-        self.template_path = self.data_path / "starter.yml"
+        self._ensure_config()
+        self._load()
 
-        self.config = {}
-        self.messages = {}
-        self.template = {}
+    def _ensure_config(self) -> None:
+        if self.path.exists():
+            return
 
-    def load(self) -> None:
-        self.plugin.save_resource("config.yml", overwrite=False)
-        self.plugin.save_resource("messages.yml", overwrite=False)
-        self.plugin.save_resource("starter.yml", overwrite=False)
+        try:
+            self.plugin.save_resources(
+                "config.yml",
+            )
+        except (
+            FileNotFoundError,
+            OSError,
+        ) as error:
+            self.plugin.logger.error(
+                f"Failed to create config.yml: {error}"
+            )
 
-        self.config = self._load_file(self.config_path)
-        self.messages = self._load_file(self.messages_path)
-        self.template = self._load_file(self.template_path)
+    def _load(self) -> None:
+        try:
+            with self.path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+                self.data = yaml.safe_load(file) or {}
 
-    @staticmethod
-    def _load_file(path: Path) -> dict:
-        if not path.exists():
-            return {}
+        except (
+            OSError,
+            yaml.YAMLError,
+        ) as error:
+            self.plugin.logger.error(
+                f"Failed to load config.yml: {error}"
+            )
+            self.data = {}
 
-        with path.open("r", encoding="utf-8") as file:
-            return yaml.safe_load(file) or {}
+    def get(
+        self,
+        path: str,
+        default=None,
+    ):
+        value = self.data
+
+        for key in path.split("."):
+            if not isinstance(value, dict):
+                return default
+
+            if key not in value:
+                return default
+
+            value = value[key]
+
+        return value
+
+    def get_int(
+        self,
+        path: str,
+        default: int,
+    ) -> int:
+        value = self.get(
+            path,
+            default,
+        )
+
+        try:
+            return int(value)
+        except (
+            TypeError,
+            ValueError,
+        ):
+            return default
+
+    def get_float(
+        self,
+        path: str,
+        default: float,
+    ) -> float:
+        value = self.get(
+            path,
+            default,
+        )
+
+        try:
+            return float(value)
+        except (
+            TypeError,
+            ValueError,
+        ):
+            return default
+
+    def get_bool(
+        self,
+        path: str,
+        default: bool,
+    ) -> bool:
+        value = self.get(
+            path,
+            default,
+        )
+
+        if isinstance(value, bool):
+            return value
+
+        return default
