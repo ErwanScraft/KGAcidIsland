@@ -1,0 +1,32 @@
+island:
+  world: Acid Island
+
+  size: 128
+  spacing: 8
+
+  origin:
+    x: 500
+    z: 500
+
+  y: 100
+
+  template:
+    file: starter.yml
+
+  spawn:
+    x: 0
+    y: 4
+    z: 0
+
+acid:
+  enabled: true
+
+  water_level: 50
+
+  damage:
+    enabled: true
+    amount: 1.0
+    interval: 20
+
+messages:
+  prefix: "&8[&bKGAcid&8] "

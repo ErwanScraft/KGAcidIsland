@@ -1,0 +1,24 @@
+layers:
+  - y: 0
+    blocks:
+      grass: minecraft:grass
+
+  - y: -1
+    blocks:
+      dirt: minecraft:dirt
+
+  - y: -2
+    blocks:
+      dirt: minecraft:dirt
+
+  - y: -3
+    blocks:
+      stone: minecraft:stone
+
+platform:
+  radius: 5
+
+tree:
+  enabled: true
+  trunk: minecraft:oak_log
+  leaves: minecraft:oak_leaves

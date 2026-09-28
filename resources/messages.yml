@@ -1,0 +1,9 @@
+island:
+  already_exists: "&cKamu sudah memiliki island."
+  created: "&aIsland berhasil dibuat."
+  teleported: "&aTeleport ke island."
+  no_island: "&cKamu belum memiliki island."
+  generation_failed: "&cIsland gagal dibuat. Silakan coba lagi."
+
+acid:
+  warning: "&cAir di bawah Y {level} beracun!"
