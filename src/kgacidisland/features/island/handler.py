@@ -3,7 +3,7 @@ from endstone.command import Command, CommandSender
 
 
 class IslandHandler:
-    def __init__(self, plugin):
+    def __init__(self, plugin) -> None:
         self.plugin = plugin
 
     def handle(
@@ -12,9 +12,15 @@ class IslandHandler:
         command: Command,
         args: list[str],
     ) -> bool:
-        if not isinstance(sender, Player):
-            self.plugin.logger.warning(
-                "Only players can use /island."
+        if not isinstance(
+            sender,
+            Player,
+        ):
+            sender.send_message(
+                self.plugin.messages.get(
+                    "callback.player_only",
+                    "§cThis command can only be used by a player.",
+                )
             )
             return True
 
@@ -33,85 +39,141 @@ class IslandHandler:
             return True
 
         self._send_help(sender)
+
         return True
 
-    def _create(self, player: Player) -> None:
-        owner_uuid = str(player.unique_id)
-
-        existing = self.plugin.island_manager.get_island(
-            owner_uuid
+    def _create(
+        self,
+        player: Player,
+    ) -> None:
+        owner_uuid = str(
+            player.unique_id
         )
 
-        if existing is not None:
+        if self.plugin.island_manager.get_island(
+            owner_uuid
+        ) is not None:
             player.send_message(
-                self.plugin.messages.get(
+                self.plugin.messages.prefixed(
                     "island.already_exists"
                 )
             )
             return
 
+        island = None
+
         try:
-            island = self.plugin.island_manager.create_island(
-                owner_uuid
+            island = (
+                self.plugin.island_manager.create_island(
+                    owner_uuid
+                )
             )
 
-            self.plugin.island_template.generate(island)
+            self.plugin.island_template.generate(
+                island
+            )
 
-            self._teleport_home(player, island)
-
-        except Exception:
-            self.plugin.logger.exception(
-                "Failed to create island for %s.",
-                player.name,
+            self._teleport_home(
+                player,
+                island,
             )
 
             player.send_message(
-                self.plugin.messages.get(
+                self.plugin.messages.prefixed(
+                    "island.created"
+                )
+            )
+
+        except Exception:
+            if island is not None:
+                self.plugin.island_manager.remove_island(
+                    owner_uuid
+                )
+
+            self.plugin.logger.exception(
+                f"Failed to create island "
+                f"for {player.name}."
+            )
+
+            player.send_message(
+                self.plugin.messages.prefixed(
                     "island.generation_failed"
                 )
             )
 
-    def _home(self, player: Player) -> None:
-        island = self.plugin.island_manager.get_island(
-            str(player.unique_id)
+    def _home(
+        self,
+        player: Player,
+    ) -> None:
+        island = (
+            self.plugin.island_manager.get_island(
+                str(player.unique_id)
+            )
         )
 
         if island is None:
             player.send_message(
-                self.plugin.messages.get(
+                self.plugin.messages.prefixed(
                     "island.no_island"
                 )
             )
             return
 
-        self._teleport_home(player, island)
+        self._teleport_home(
+            player,
+            island,
+        )
 
-    def _teleport_home(self, player, island) -> None:
-        spawn = self.plugin.config_manager.config[
-            "island"
-        ].get("spawn", {})
+    def _teleport_home(
+        self,
+        player: Player,
+        island,
+    ) -> None:
+        spawn = self.plugin.config_manager.get(
+            "island.spawn",
+            {},
+        )
 
-        x = island.origin_x + int(spawn.get("x", 0))
-        y = island.origin_y + int(spawn.get("y", 3))
-        z = island.origin_z + int(spawn.get("z", 0))
+        if not isinstance(
+            spawn,
+            dict,
+        ):
+            spawn = {}
+
+        x = island.origin_x + int(
+            spawn.get("x", 0)
+        )
+
+        y = island.origin_y + int(
+            spawn.get("y", 4)
+        )
+
+        z = island.origin_z + int(
+            spawn.get("z", 0)
+        )
 
         location = player.location
+
         location.x = x + 0.5
         location.y = y
         location.z = z + 0.5
 
-        player.teleport(location)
+        player.teleport(
+            location
+        )
 
         player.send_message(
-            self.plugin.messages.get(
+            self.plugin.messages.prefixed(
                 "island.teleported"
             )
         )
 
-    @staticmethod
-    def _send_help(player: Player) -> None:
+    def _send_help(
+        self,
+        player: Player,
+    ) -> None:
         player.send_message(
-            "§b§lKGAcidIsland"
-            "\n§7/island create §f- Create your island"
-            "\n§7/island home §f- Teleport to your island"
+            "§b§lKGAcidIsland\n"
+            "§7/island create §f- Create your island\n"
+            "§7/island home §f- Teleport to your island"
         )

@@ -29,6 +29,7 @@ class IslandManager:
                 encoding="utf-8",
             ) as file:
                 data = json.load(file)
+
         except (
             OSError,
             json.JSONDecodeError,
@@ -47,27 +48,50 @@ class IslandManager:
         self._islands.clear()
 
         for owner_uuid, island_data in data.items():
-            if not isinstance(island_data, dict):
+            if not isinstance(
+                owner_uuid,
+                str,
+            ):
+                continue
+
+            if not isinstance(
+                island_data,
+                dict,
+            ):
                 continue
 
             try:
-                self._islands[owner_uuid] = Island(
+                island = Island(
                     owner_uuid=owner_uuid,
-                    grid_x=int(island_data["grid_x"]),
-                    grid_z=int(island_data["grid_z"]),
-                    origin_x=int(island_data["origin_x"]),
-                    origin_y=int(island_data["origin_y"]),
-                    origin_z=int(island_data["origin_z"]),
+                    grid_x=int(
+                        island_data["grid_x"]
+                    ),
+                    grid_z=int(
+                        island_data["grid_z"]
+                    ),
+                    origin_x=int(
+                        island_data["origin_x"]
+                    ),
+                    origin_y=int(
+                        island_data["origin_y"]
+                    ),
+                    origin_z=int(
+                        island_data["origin_z"]
+                    ),
                 )
+
             except (
                 KeyError,
                 TypeError,
                 ValueError,
             ) as error:
                 self.plugin.logger.warning(
-                    f"Skipped invalid island data for "
-                    f"{owner_uuid}: {error}"
+                    f"Skipped invalid island data "
+                    f"for {owner_uuid}: {error}"
                 )
+                continue
+
+            self._islands[owner_uuid] = island
 
     def save(self) -> None:
         self._data_path.parent.mkdir(
@@ -83,7 +107,8 @@ class IslandManager:
                 "origin_y": island.origin_y,
                 "origin_z": island.origin_z,
             }
-            for owner_uuid, island in self._islands.items()
+            for owner_uuid, island
+            in self._islands.items()
         }
 
         try:
@@ -96,6 +121,7 @@ class IslandManager:
                     file,
                     indent=2,
                 )
+
         except OSError as error:
             self.plugin.logger.error(
                 f"Failed to save islands.json: {error}"
@@ -105,27 +131,39 @@ class IslandManager:
         self,
         owner_uuid: str,
     ) -> Island | None:
-        return self._islands.get(owner_uuid)
+        return self._islands.get(
+            owner_uuid
+        )
 
     def create_island(
         self,
         owner_uuid: str,
     ) -> Island:
-        if self.get_island(owner_uuid) is not None:
+        if self.get_island(
+            owner_uuid
+        ) is not None:
             raise ValueError(
                 "Player already owns an island."
             )
 
-        grid_x, grid_z = self._find_free_slot()
-
-        island_size = self.config.get_int(
-            "island.size",
-            128,
+        grid_x, grid_z = (
+            self._find_free_slot()
         )
 
-        spacing = self.config.get_int(
-            "island.spacing",
-            8,
+        island_size = max(
+            1,
+            self.config.get_int(
+                "island.size",
+                128,
+            ),
+        )
+
+        spacing = max(
+            0,
+            self.config.get_int(
+                "island.spacing",
+                8,
+            ),
         )
 
         origin_x = self.config.get_int(
@@ -143,18 +181,27 @@ class IslandManager:
             100,
         )
 
-        grid_size = island_size + spacing
+        grid_size = (
+            island_size + spacing
+        )
 
         island = Island(
             owner_uuid=owner_uuid,
             grid_x=grid_x,
             grid_z=grid_z,
-            origin_x=origin_x + (grid_x * grid_size),
+            origin_x=(
+                origin_x
+                + grid_x * grid_size
+            ),
             origin_y=origin_y,
-            origin_z=origin_z + (grid_z * grid_size),
+            origin_z=(
+                origin_z
+                + grid_z * grid_size
+            ),
         )
 
         self._islands[owner_uuid] = island
+
         self.save()
 
         return island
@@ -166,18 +213,24 @@ class IslandManager:
         if owner_uuid not in self._islands:
             return False
 
-        del self._islands[owner_uuid]
+        del self._islands[
+            owner_uuid
+        ]
+
         self.save()
 
         return True
 
-    def _find_free_slot(self) -> tuple[int, int]:
+    def _find_free_slot(
+        self,
+    ) -> tuple[int, int]:
         occupied = {
             (
                 island.grid_x,
                 island.grid_z,
             )
-            for island in self._islands.values()
+            for island
+            in self._islands.values()
         }
 
         if (0, 0) not in occupied:
@@ -200,10 +253,12 @@ class IslandManager:
                     ):
                         continue
 
-                    if (
+                    slot = (
                         grid_x,
                         grid_z,
-                    ) not in occupied:
-                        return grid_x, grid_z
+                    )
+
+                    if slot not in occupied:
+                        return slot
 
             radius += 1

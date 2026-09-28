@@ -1,5 +1,8 @@
 prefix: "§8[§bKGAcid§8]"
 
+callback:
+  player_only: "§cThis command can only be used by a player."
+
 island:
   already_exists: "§cKamu sudah memiliki island."
   created: "§aIsland berhasil dibuat."

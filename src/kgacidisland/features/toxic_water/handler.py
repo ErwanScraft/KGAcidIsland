@@ -2,26 +2,32 @@ from endstone import Player
 
 
 class ToxicWaterHandler:
-    def __init__(self, plugin):
+    def __init__(self, plugin) -> None:
         self.plugin = plugin
+        self._task_started = False
 
     def start(self) -> None:
-        acid = self.plugin.config_manager.config.get(
-            "acid",
-            {},
-        )
-
-        if not acid.get("enabled", True):
+        if self._task_started:
             return
 
-        damage = acid.get("damage", {})
+        if not self.plugin.config_manager.get_bool(
+            "acid.enabled",
+            True,
+        ):
+            return
 
-        if not damage.get("enabled", True):
+        if not self.plugin.config_manager.get_bool(
+            "acid.damage.enabled",
+            True,
+        ):
             return
 
         interval = max(
             1,
-            int(damage.get("interval", 20)),
+            self.plugin.config_manager.get_int(
+                "acid.damage.interval",
+                20,
+            ),
         )
 
         self.plugin.server.scheduler.run_task(
@@ -31,18 +37,21 @@ class ToxicWaterHandler:
             period=interval,
         )
 
-    def _tick(self) -> None:
-        acid = self.plugin.config_manager.config.get(
-            "acid",
-            {},
-        )
+        self._task_started = True
 
-        water_level = int(
-            acid.get("water_level", 50)
+    def _tick(self) -> None:
+        water_level = (
+            self.plugin.config_manager.get_int(
+                "acid.water_level",
+                50,
+            )
         )
 
         for player in self.plugin.server.online_players:
-            if not isinstance(player, Player):
+            if not isinstance(
+                player,
+                Player,
+            ):
                 continue
 
             location = player.location
@@ -56,17 +65,26 @@ class ToxicWaterHandler:
                 int(location.z),
             )
 
-            if block.type.identifier != "minecraft:water":
+            if block.type.identifier != (
+                "minecraft:water"
+            ):
                 continue
 
             self._damage(player)
 
-    def _damage(self, player: Player) -> None:
-        amount = float(
-            self.plugin.config_manager.config[
-                "acid"
-            ]["damage"]["amount"]
+    def _damage(
+        self,
+        player: Player,
+    ) -> None:
+        amount = (
+            self.plugin.config_manager.get_float(
+                "acid.damage.amount",
+                1.0,
+            )
         )
+
+        if amount <= 0:
+            return
 
         self.plugin.server.dispatch_command(
             self.plugin.server.command_sender,

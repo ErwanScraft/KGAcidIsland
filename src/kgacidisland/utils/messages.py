@@ -6,9 +6,30 @@ import yaml
 class KGAcidIslandMessages:
     def __init__(self, plugin) -> None:
         self.plugin = plugin
-        self.path = Path(plugin.data_folder) / "message.yml"
+        self.path = Path(
+            plugin.data_folder
+        ) / "message.yml"
 
+        self.data = {}
+
+        self._ensure_messages()
         self._load()
+
+    def _ensure_messages(self) -> None:
+        if self.path.exists():
+            return
+
+        try:
+            self.plugin.save_resources(
+                "message.yml",
+            )
+        except (
+            FileNotFoundError,
+            OSError,
+        ) as error:
+            self.plugin.logger.error(
+                f"Failed to create message.yml: {error}"
+            )
 
     def _load(self) -> None:
         try:

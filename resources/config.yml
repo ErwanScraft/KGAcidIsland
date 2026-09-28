@@ -27,6 +27,3 @@ acid:
     enabled: true
     amount: 1.0
     interval: 20
-
-messages:
-  prefix: "&8[&bKGAcid&8] "
