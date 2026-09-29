@@ -3,20 +3,16 @@ platform:
 
 layers:
   - y: 0
-    blocks:
-      grass: minecraft:grass
+    block: minecraft:grass
 
   - y: -1
-    blocks:
-      dirt: minecraft:dirt
+    block: minecraft:dirt
 
   - y: -2
-    blocks:
-      dirt: minecraft:dirt
+    block: minecraft:dirt
 
   - y: -3
-    blocks:
-      stone: minecraft:stone
+    block: minecraft:stone
 
 tree:
   enabled: true

@@ -98,7 +98,7 @@ class IslandManager:
             parents=True,
             exist_ok=True,
         )
-
+    
         data = {
             owner_uuid: {
                 "grid_x": island.grid_x,
@@ -107,12 +107,15 @@ class IslandManager:
                 "origin_y": island.origin_y,
                 "origin_z": island.origin_z,
             }
-            for owner_uuid, island
-            in self._islands.items()
+            for owner_uuid, island in self._islands.items()
         }
-
+    
+        temp_path = self._data_path.with_suffix(
+            ".json.tmp"
+        )
+    
         try:
-            with self._data_path.open(
+            with temp_path.open(
                 "w",
                 encoding="utf-8",
             ) as file:
@@ -121,11 +124,23 @@ class IslandManager:
                     file,
                     indent=2,
                 )
-
+                file.write("\n")
+    
+            temp_path.replace(
+                self._data_path
+            )
+    
         except OSError as error:
             self.plugin.logger.error(
                 f"Failed to save islands.json: {error}"
             )
+    
+            try:
+                temp_path.unlink(
+                    missing_ok=True
+                )
+            except OSError:
+                pass
 
     def get_island(
         self,
@@ -201,8 +216,6 @@ class IslandManager:
         )
 
         self._islands[owner_uuid] = island
-
-        self.save()
 
         return island
 

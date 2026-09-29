@@ -1,8 +1,13 @@
+from .model import Island
+
 class IslandTemplate:
     def __init__(self, plugin) -> None:
         self.plugin = plugin
 
-    def generate(self, island) -> None:
+    def generate(
+        self,
+        island: Island,
+    ) -> None:
         world_name = self.plugin.config_manager.get(
             "island.world",
             "",
@@ -48,15 +53,23 @@ class IslandTemplate:
         ):
             platform = {}
 
-        radius = max(
-            0,
-            int(
-                platform.get(
-                    "radius",
-                    5,
-                )
-            ),
-        )
+        try:
+            radius = max(
+                0,
+                int(
+                    platform.get(
+                        "radius",
+                        5,
+                    )
+                ),
+            )
+        except (
+            TypeError,
+            ValueError,
+        ):
+            raise RuntimeError(
+                "starter.yml 'platform.radius' must be an integer."
+            )
 
         layers = template.get(
             "layers",
@@ -89,26 +102,16 @@ class IslandTemplate:
             ):
                 continue
 
-            blocks = layer.get(
-                "blocks",
-                {},
-            )
-
-            if not isinstance(
-                blocks,
-                dict,
-            ):
-                continue
-
-            block_type = next(
-                (
-                    value
-                    for value in blocks.values()
-                    if isinstance(value, str)
-                    and value
-                ),
+            block_type = layer.get(
+                "block",
                 "minecraft:air",
             )
+            
+            if not isinstance(
+                block_type,
+                str,
+            ) or not block_type:
+                continue
 
             for x in range(
                 -radius,
@@ -135,7 +138,7 @@ class IslandTemplate:
     def _generate_tree(
         self,
         world,
-        island,
+        island: Island,
         template,
     ) -> None:
         tree = template.get(

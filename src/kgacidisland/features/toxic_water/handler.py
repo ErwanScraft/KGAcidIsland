@@ -1,4 +1,4 @@
-from endstone import Player
+from endstone import GameMode, Player
 
 
 class ToxicWaterHandler:
@@ -53,6 +53,12 @@ class ToxicWaterHandler:
                 Player,
             ):
                 continue
+                
+            if player.game_mode in (
+                GameMode.CREATIVE,
+                GameMode.SPECTATOR,
+            ):
+                continue
 
             location = player.location
 
@@ -64,29 +70,32 @@ class ToxicWaterHandler:
                 int(location.y),
                 int(location.z),
             )
-
-            if block.type.identifier != (
-                "minecraft:water"
-            ):
+            
+            if block.type.identifier != "minecraft:water":
+                block = player.dimension.get_block_at(
+                    int(location.x),
+                    int(location.y + 1),
+                    int(location.z),
+                )
+            
+            if block.type.identifier != "minecraft:water":
                 continue
-
+            
             self._damage(player)
 
     def _damage(
         self,
         player: Player,
     ) -> None:
-        amount = (
-            self.plugin.config_manager.get_float(
-                "acid.damage.amount",
-                1.0,
-            )
+        amount = self.plugin.config_manager.get_float(
+            "acid.damage.amount",
+            1.0,
         )
-
+    
         if amount <= 0:
             return
-
-        self.plugin.server.dispatch_command(
-            self.plugin.server.command_sender,
-            f"damage {player.name} {amount} poison",
+    
+        player.health = max(
+            0.0,
+            player.health - amount,
         )

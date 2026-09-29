@@ -1,12 +1,13 @@
 from endstone import Player
-from endstone.command import Command, CommandSender
+from endstone.command import Command, CommandExecutor, CommandSender
+from .model import Island
 
 
-class IslandHandler:
+class IslandHandler(CommandExecutor):
     def __init__(self, plugin) -> None:
         self.plugin = plugin
 
-    def handle(
+    def on_command(
         self,
         sender: CommandSender,
         command: Command,
@@ -60,7 +61,7 @@ class IslandHandler:
             )
             return
 
-        island = None
+        island: Island | None = None
 
         try:
             island = (
@@ -72,7 +73,9 @@ class IslandHandler:
             self.plugin.island_template.generate(
                 island
             )
-
+            
+            self.plugin.island_manager.save()
+            
             self._teleport_home(
                 player,
                 island,
@@ -127,7 +130,7 @@ class IslandHandler:
     def _teleport_home(
         self,
         player: Player,
-        island,
+        island: Island,
     ) -> None:
         spawn = self.plugin.config_manager.get(
             "island.spawn",
