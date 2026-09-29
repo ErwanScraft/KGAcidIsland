@@ -12,7 +12,7 @@ class KGAcidIsland(Plugin):
     api_version = "0.11"
 
     name = "KGAcidIsland"
-    version = "0.1.0"
+    version = "0.1.5"
     authors = ["ErwanScraft"]
     description = "Acid Island gameplay for KG Survival."
     prefix = "KGAcidIsland"
@@ -22,12 +22,7 @@ class KGAcidIsland(Plugin):
             "description": "Manage your Acid Island.",
             "usages": [
                 "/island",
-                "/island create",
-                "/island home",
-                "/island template pos1",
-                "/island template pos2",
-                "/island template add",
-                "/island template clear",
+                "/island <action: str> [subcommand: str]",
             ],
             "permissions": [
                 "kgacidisland.command.island",

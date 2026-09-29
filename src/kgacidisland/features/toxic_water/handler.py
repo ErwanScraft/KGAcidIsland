@@ -87,20 +87,24 @@ class ToxicWaterHandler:
             if location.y > water_level:
                 continue
 
-            block = player.dimension.get_block_at(
-                int(location.x),
-                int(location.y),
-                int(location.z),
-            )
+            x = int(location.x)
+            y = int(location.y)
+            z = int(location.z)
 
-            if block.type != "minecraft:water":
+            is_in_water = False
+
+            for offset in (0, 1):
                 block = player.dimension.get_block_at(
-                    int(location.x),
-                    int(location.y + 1),
-                    int(location.z),
+                    x,
+                    y + offset,
+                    z,
                 )
 
-            if block.type != "minecraft:water":
+                if block.type == "minecraft:water":
+                    is_in_water = True
+                    break
+
+            if not is_in_water:
                 continue
 
             self._damage(player)
