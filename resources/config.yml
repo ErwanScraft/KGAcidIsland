@@ -12,6 +12,7 @@ island:
 
   template:
     file: starter.yml
+    max_blocks: 32768
 
   spawn:
     x: 0
@@ -25,5 +26,4 @@ acid:
 
   damage:
     enabled: true
-    amount: 1.0
     interval: 20

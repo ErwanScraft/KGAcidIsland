@@ -110,6 +110,33 @@ class ConfigManager:
 
         self.template = data
 
+    def save_template(
+        self,
+        template: dict,
+    ) -> None:
+        try:
+            with self.template_path.open(
+                "w",
+                encoding="utf-8",
+            ) as file:
+                yaml.safe_dump(
+                    template,
+                    file,
+                    allow_unicode=True,
+                    sort_keys=False,
+                    default_flow_style=False,
+                )
+
+        except (
+            OSError,
+            yaml.YAMLError,
+        ) as error:
+            raise RuntimeError(
+                f"Failed to save starter.yml: {error}"
+            ) from error
+
+        self.template = template
+
     def get(
         self,
         path: str,

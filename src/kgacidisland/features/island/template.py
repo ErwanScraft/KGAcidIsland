@@ -1,9 +1,181 @@
+from endstone import Player
+
 from .model import Island
 
 class IslandTemplate:
     def __init__(self, plugin) -> None:
         super().__init__()
         self.plugin = plugin
+        self._selections = {}
+
+    def set_pos1(
+        self,
+        player: Player,
+    ) -> None:
+        self._selections.setdefault(
+            str(player.unique_id),
+            {},
+        )["pos1"] = (
+            int(player.location.x),
+            int(player.location.y),
+            int(player.location.z),
+        )
+
+    def set_pos2(
+        self,
+        player: Player,
+    ) -> None:
+        self._selections.setdefault(
+            str(player.unique_id),
+            {},
+        )["pos2"] = (
+            int(player.location.x),
+            int(player.location.y),
+            int(player.location.z),
+        )
+
+    def clear_selection(
+        self,
+        player: Player,
+    ) -> None:
+        self._selections.pop(
+            str(player.unique_id),
+            None,
+        )
+
+    def capture(
+        self,
+        player: Player,
+    ) -> int:
+        selection = self._selections.get(
+            str(player.unique_id)
+        )
+
+        if not selection:
+            raise RuntimeError(
+                "Template positions are not set."
+            )
+
+        pos1 = selection.get("pos1")
+        pos2 = selection.get("pos2")
+
+        if pos1 is None or pos2 is None:
+            raise RuntimeError(
+                "Both template positions are required."
+            )
+
+        min_x = min(pos1[0], pos2[0])
+        max_x = max(pos1[0], pos2[0])
+        min_y = min(pos1[1], pos2[1])
+        max_y = max(pos1[1], pos2[1])
+        min_z = min(pos1[2], pos2[2])
+        max_z = max(pos1[2], pos2[2])
+
+        size_x = max_x - min_x + 1
+        size_y = max_y - min_y + 1
+        size_z = max_z - min_z + 1
+
+        total_blocks = (
+            size_x
+            * size_y
+            * size_z
+        )
+
+        max_blocks = self.plugin.config_manager.get_int(
+            "island.template.max_blocks",
+            32768,
+        )
+
+        if total_blocks > max_blocks:
+            raise RuntimeError(
+                f"Template is too large. "
+                f"Maximum is {max_blocks:,} blocks."
+            )
+
+        world = player.dimension
+
+        center_x = (
+            min_x + max_x
+        ) // 2
+
+        center_z = (
+            min_z + max_z
+        ) // 2
+
+        palette = []
+        palette_index = {}
+        blocks = []
+
+        for y in range(
+            min_y,
+            max_y + 1,
+        ):
+            for x in range(
+                min_x,
+                max_x + 1,
+            ):
+                for z in range(
+                    min_z,
+                    max_z + 1,
+                ):
+                    block = world.get_block_at(
+                        x,
+                        y,
+                        z,
+                    )
+
+                    block_type = block.type
+
+                    if not isinstance(
+                        block_type,
+                        str,
+                    ) or not block_type:
+                        continue
+
+                    if block_type == "minecraft:air":
+                        continue
+
+                    if block_type not in palette_index:
+                        palette_index[
+                            block_type
+                        ] = len(palette)
+
+                        palette.append(
+                            block_type
+                        )
+
+                    blocks.append(
+                        [
+                            x - center_x,
+                            y - min_y,
+                            z - center_z,
+                            palette_index[
+                                block_type
+                            ],
+                        ]
+                    )
+
+        template = {
+            "version": 1,
+            "size": {
+                "x": size_x,
+                "y": size_y,
+                "z": size_z,
+            },
+            "palette": palette,
+            "blocks": blocks,
+        }
+
+        self.plugin.config_manager.save_template(
+            template
+        )
+
+        self._selections.pop(
+            str(player.unique_id),
+            None,
+        )
+
+        return len(blocks)
 
     def generate(
         self,
@@ -20,15 +192,17 @@ class IslandTemplate:
             )
 
         level = self.plugin.server.level
-        
+
         if level.name != world_name:
             raise RuntimeError(
                 f"Configured island world "
                 f"'{world_name}' was not found."
             )
-        
-        world = level.get_dimension("overworld")
-        
+
+        world = level.get_dimension(
+            "overworld"
+        )
+
         if world is None:
             raise RuntimeError(
                 f"Overworld dimension for "
@@ -47,6 +221,99 @@ class IslandTemplate:
                 "Invalid starter.yml configuration."
             )
 
+        if "blocks" in template:
+            self._generate_snapshot(
+                world,
+                island,
+                template,
+            )
+            return
+
+        self._generate_legacy(
+            world,
+            island,
+            template,
+        )
+
+    def _generate_snapshot(
+        self,
+        world,
+        island: Island,
+        template: dict,
+    ) -> None:
+        palette = template.get(
+            "palette",
+            [],
+        )
+
+        blocks = template.get(
+            "blocks",
+            [],
+        )
+
+        if not isinstance(
+            palette,
+            list,
+        ):
+            raise RuntimeError(
+                "starter.yml 'palette' must be a list."
+            )
+
+        if not isinstance(
+            blocks,
+            list,
+        ):
+            raise RuntimeError(
+                "starter.yml 'blocks' must be a list."
+            )
+
+        for entry in blocks:
+            if not isinstance(
+                entry,
+                list,
+            ) or len(entry) != 4:
+                continue
+
+            try:
+                offset_x = int(entry[0])
+                offset_y = int(entry[1])
+                offset_z = int(entry[2])
+                palette_id = int(entry[3])
+            except (
+                TypeError,
+                ValueError,
+            ):
+                continue
+
+            if not 0 <= palette_id < len(
+                palette
+            ):
+                continue
+
+            block_type = palette[
+                palette_id
+            ]
+
+            if not isinstance(
+                block_type,
+                str,
+            ) or not block_type:
+                continue
+
+            world.get_block_at(
+                island.origin_x + offset_x,
+                island.origin_y + offset_y,
+                island.origin_z + offset_z,
+            ).set_type(
+                block_type
+            )
+
+    def _generate_legacy(
+        self,
+        world,
+        island: Island,
+        template: dict,
+    ) -> None:
         island_y = island.origin_y
 
         platform = template.get(
@@ -75,7 +342,8 @@ class IslandTemplate:
             ValueError,
         ):
             raise RuntimeError(
-                "starter.yml 'platform.radius' must be an integer."
+                "starter.yml 'platform.radius' "
+                "must be an integer."
             )
 
         layers = template.get(
@@ -113,7 +381,7 @@ class IslandTemplate:
                 "block",
                 "minecraft:air",
             )
-            
+
             if not isinstance(
                 block_type,
                 str,
@@ -146,7 +414,7 @@ class IslandTemplate:
         self,
         world,
         island: Island,
-        template,
+        template: dict,
     ) -> None:
         tree = template.get(
             "tree",

@@ -87,15 +87,7 @@ class ToxicWaterHandler:
         self,
         player: Player,
     ) -> None:
-        amount = self.plugin.config_manager.get_float(
-            "acid.damage.amount",
-            1.0,
-        )
-    
-        if amount <= 0:
-            return
-    
-        player.health = max(
-            0.0,
-            player.health - amount,
+        self.plugin.server.dispatch_command(
+            self.plugin.server.console_sender,
+            f"effect {player.name} poison 2 0 true",
         )

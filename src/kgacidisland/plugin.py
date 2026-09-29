@@ -24,6 +24,10 @@ class KGAcidIsland(Plugin):
                 "/island",
                 "/island create",
                 "/island home",
+                "/island template pos1",
+                "/island template pos2",
+                "/island template add",
+                "/island template clear",
             ],
             "permissions": [
                 "kgacidisland.command.island",
@@ -35,6 +39,10 @@ class KGAcidIsland(Plugin):
         "kgacidisland.command.island": {
             "description": "Allows the player to use /island.",
             "default": True,
+        },
+        "kgacidisland.command.template": {
+            "description": "Allows the player to manage island templates.",
+            "default": op,
         },
     }
 

@@ -10,5 +10,14 @@ island:
   no_island: "§cKamu belum memiliki island."
   generation_failed: "§cIsland gagal dibuat. Silakan coba lagi."
 
+template:
+  no_permission: "§cKamu tidak memiliki permission untuk mengubah template."
+  help: "§7/island template pos1 §f- Set posisi pertama\n§7/island template pos2 §f- Set posisi kedua\n§7/island template add §f- Simpan template\n§7/island template clear §f- Hapus selection"
+  pos1: "§aPosisi pertama disimpan: §f{x}, {y}, {z}"
+  pos2: "§aPosisi kedua disimpan: §f{x}, {y}, {z}"
+  saved: "§aTemplate berhasil disimpan. §f{blocks} block§a tersimpan."
+  cleared: "§aSelection template dihapus."
+  failed: "§cGagal menyimpan template. Periksa console."
+
 acid:
   warning: "§cAir di bawah Y {level} beracun!"
