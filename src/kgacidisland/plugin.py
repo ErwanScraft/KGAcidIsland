@@ -42,7 +42,7 @@ class KGAcidIsland(Plugin):
         },
         "kgacidisland.command.template": {
             "description": "Allows the player to manage island templates.",
-            "default": op,
+            "default": "op",
         },
     }
 
