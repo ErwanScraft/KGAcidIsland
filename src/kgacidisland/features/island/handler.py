@@ -5,6 +5,7 @@ from .model import Island
 
 class IslandHandler(CommandExecutor):
     def __init__(self, plugin) -> None:
+        super().__init__()
         self.plugin = plugin
 
     def on_command(
@@ -93,9 +94,10 @@ class IslandHandler(CommandExecutor):
                     owner_uuid
                 )
 
-            self.plugin.logger.exception(
+            self.plugin.logger.error(
                 f"Failed to create island "
-                f"for {player.name}."
+                f"for {player.name}: "
+                f"{type(error).__name__}: {error}"
             )
 
             player.send_message(

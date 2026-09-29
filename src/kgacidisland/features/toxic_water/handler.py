@@ -71,14 +71,14 @@ class ToxicWaterHandler:
                 int(location.z),
             )
             
-            if block.type.identifier != "minecraft:water":
+            if block.type != "minecraft:water":
                 block = player.dimension.get_block_at(
                     int(location.x),
                     int(location.y + 1),
                     int(location.z),
                 )
             
-            if block.type.identifier != "minecraft:water":
+            if block.type != "minecraft:water":
                 continue
             
             self._damage(player)

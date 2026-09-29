@@ -1,3 +1,5 @@
+from endstone import Dimension
+
 from .model import Island
 
 class IslandTemplate:
@@ -18,13 +20,26 @@ class IslandTemplate:
                 "Island world is not configured."
             )
 
-        world = self.plugin.server.get_world(
-            world_name
-        )
-
-        if world is None:
+        level = self.plugin.server.level
+        
+        if level.name != world_name:
             raise RuntimeError(
                 f"Configured island world "
+                f"'{world_name}' was not found."
+            )
+        
+        world = next(
+            (
+                dimension
+                for dimension in level.dimensions
+                if dimension.type == Dimension.OVERWORLD
+            ),
+            None,
+        )
+        
+        if world is None:
+            raise RuntimeError(
+                f"Overworld dimension for "
                 f"'{world_name}' was not found."
             )
 
