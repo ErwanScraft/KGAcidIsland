@@ -199,7 +199,7 @@ class IslandTemplate:
     def generate(
         self,
         island: Island,
-    ) -> None:
+    ) -> int:
         world_name = self.plugin.config_manager.get(
             "island.world",
             "",
@@ -244,14 +244,13 @@ class IslandTemplate:
             )
 
         if "blocks" in template:
-            self._generate_snapshot(
+            return self._generate_snapshot(
                 world,
                 island,
                 template,
             )
-            return
 
-        self._generate_legacy(
+        return self._generate_legacy(
             world,
             island,
             template,
@@ -262,7 +261,7 @@ class IslandTemplate:
         world,
         island: Island,
         template: dict,
-    ) -> None:
+    ) -> int:
         palette = template.get(
             "palette",
             [],
@@ -301,6 +300,8 @@ class IslandTemplate:
                 "starter.yml 'blocks' must be a list."
             )
 
+        placed_blocks = 0
+
         for entry in blocks:
             if not isinstance(
                 entry,
@@ -333,15 +334,25 @@ class IslandTemplate:
                 island.origin_y + offset_y,
                 island.origin_z + offset_z,
             ).set_type(
-                block_type
+                block_type,
+                False,
             )
+
+            placed_blocks += 1
+
+        if placed_blocks <= 0:
+            raise RuntimeError(
+                "Island template contains no valid blocks."
+            )
+
+        return placed_blocks
 
     def _generate_legacy(
         self,
         world,
         island: Island,
         template: dict,
-    ) -> None:
+    ) -> int:
         island_y = island.origin_y
 
         platform = template.get(
@@ -386,6 +397,8 @@ class IslandTemplate:
             raise RuntimeError(
                 "starter.yml 'layers' must be a list."
             )
+
+        placed_blocks = 0
 
         for layer in layers:
             if not isinstance(
@@ -434,21 +447,31 @@ class IslandTemplate:
                         layer_y,
                         island.origin_z + z,
                     ).set_type(
-                        block_type
+                        block_type,
+                        False,
                     )
 
-        self._generate_tree(
+                    placed_blocks += 1
+
+        placed_blocks += self._generate_tree(
             world,
             island,
             template,
         )
+
+        if placed_blocks <= 0:
+            raise RuntimeError(
+                "Island template generated no blocks."
+            )
+
+        return placed_blocks
 
     def _generate_tree(
         self,
         world,
         island: Island,
         template: dict,
-    ) -> None:
+    ) -> int:
         tree = template.get(
             "tree",
             {},
@@ -458,13 +481,13 @@ class IslandTemplate:
             tree,
             dict,
         ):
-            return
+            return 0
 
         if not tree.get(
             "enabled",
             True,
         ):
-            return
+            return 0
 
         trunk = tree.get(
             "trunk",
@@ -480,17 +503,19 @@ class IslandTemplate:
             trunk,
             str,
         ) or not trunk:
-            return
+            return 0
 
         if not isinstance(
             leaves,
             str,
         ) or not leaves:
-            return
+            return 0
 
         x = island.origin_x + 2
         z = island.origin_z + 2
         y = island.origin_y + 1
+
+        placed_blocks = 0
 
         for offset in range(4):
             world.get_block_at(
@@ -498,8 +523,11 @@ class IslandTemplate:
                 y + offset,
                 z,
             ).set_type(
-                trunk
+                trunk,
+                False,
             )
+
+            placed_blocks += 1
 
         for dx in range(-2, 3):
             for dz in range(-2, 3):
@@ -510,5 +538,10 @@ class IslandTemplate:
                             y + dy,
                             z + dz,
                         ).set_type(
-                            leaves
+                            leaves,
+                            False,
                         )
+
+                        placed_blocks += 1
+
+        return placed_blocks

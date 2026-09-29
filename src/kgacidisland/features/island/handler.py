@@ -80,21 +80,29 @@ class IslandHandler(CommandExecutor):
                 )
             )
 
-            self.plugin.island_template.generate(
-                island
+            placed_blocks = (
+                self.plugin.island_template.generate(
+                    island
+                )
+            )
+
+            if placed_blocks <= 0:
+                raise RuntimeError(
+                    "Island generation completed "
+                    "without placing any blocks."
+                )
+
+            self.plugin.logger.info(
+                f"Generated island for "
+                f"{player.name}: "
+                f"{placed_blocks} block(s)."
             )
 
             self.plugin.island_manager.save()
 
-            self._teleport_home(
+            self._schedule_teleport(
                 player,
                 island,
-            )
-
-            player.send_message(
-                self.plugin.messages.prefixed(
-                    "island.created"
-                )
             )
 
         except Exception as error:
@@ -115,6 +123,29 @@ class IslandHandler(CommandExecutor):
                     "island.generation_failed"
                 )
             )
+
+    def _schedule_teleport(
+        self,
+        player: Player,
+        island: Island,
+    ) -> None:
+        def teleport() -> None:
+            self._teleport_home(
+                player,
+                island,
+            )
+
+            player.send_message(
+                self.plugin.messages.prefixed(
+                    "island.created"
+                )
+            )
+
+        self.plugin.server.scheduler.run_task(
+            self.plugin,
+            teleport,
+            delay=1,
+        )
 
     def _template(
         self,
