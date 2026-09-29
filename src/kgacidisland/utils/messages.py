@@ -10,10 +10,10 @@ class KGAcidIslandMessages:
             plugin.data_folder
         ) / "message.yml"
 
-        self.data = {}
+        self.data: dict = {}
 
         self._ensure_messages()
-        self._load()
+        self.reload()
 
     def _ensure_messages(self) -> None:
         if self.path.exists():
@@ -21,7 +21,7 @@ class KGAcidIslandMessages:
 
         try:
             self.plugin.save_resources(
-                "message.yml",
+                "message.yml"
             )
         except (
             FileNotFoundError,
@@ -30,6 +30,9 @@ class KGAcidIslandMessages:
             self.plugin.logger.error(
                 f"Failed to create message.yml: {error}"
             )
+
+    def reload(self) -> None:
+        self._load()
 
     def _load(self) -> None:
         try:
@@ -95,7 +98,7 @@ class KGAcidIslandMessages:
 
         try:
             return message.format(
-                **values,
+                **values
             )
         except (
             KeyError,

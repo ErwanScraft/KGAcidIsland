@@ -7,31 +7,21 @@ class ConfigManager:
     def __init__(self, plugin) -> None:
         self.plugin = plugin
 
-        self.path = Path(
-            plugin.data_folder
-        ) / "config.yml"
+        self.path = Path(plugin.data_folder) / "config.yml"
+        self.template_path = Path(plugin.data_folder) / "starter.yml"
 
-        self.template_path = Path(
-            plugin.data_folder
-        ) / "starter.yml"
-
-        self.data = {}
-        self.template = {}
+        self.data: dict = {}
+        self.template: dict = {}
 
         self._ensure_config()
-        self._ensure_template()
-
-        self._load()
-        self._load_template()
+        self.reload()
 
     def _ensure_config(self) -> None:
         if self.path.exists():
             return
 
         try:
-            self.plugin.save_resources(
-                "config.yml",
-            )
+            self.plugin.save_resources("config.yml")
         except (
             FileNotFoundError,
             OSError,
@@ -45,9 +35,7 @@ class ConfigManager:
             return
 
         try:
-            self.plugin.save_resources(
-                "starter.yml",
-            )
+            self.plugin.save_resources("starter.yml")
         except (
             FileNotFoundError,
             OSError,
@@ -55,6 +43,11 @@ class ConfigManager:
             self.plugin.logger.error(
                 f"Failed to create starter.yml: {error}"
             )
+
+    def reload(self) -> None:
+        self._load()
+        self._ensure_template()
+        self._load_template()
 
     def _load(self) -> None:
         try:
@@ -114,8 +107,12 @@ class ConfigManager:
         self,
         template: dict,
     ) -> None:
+        temp_path = self.template_path.with_suffix(
+            ".yml.tmp"
+        )
+
         try:
-            with self.template_path.open(
+            with temp_path.open(
                 "w",
                 encoding="utf-8",
             ) as file:
@@ -127,10 +124,21 @@ class ConfigManager:
                     default_flow_style=False,
                 )
 
+            temp_path.replace(
+                self.template_path
+            )
+
         except (
             OSError,
             yaml.YAMLError,
         ) as error:
+            try:
+                temp_path.unlink(
+                    missing_ok=True
+                )
+            except OSError:
+                pass
+
             raise RuntimeError(
                 f"Failed to save starter.yml: {error}"
             ) from error

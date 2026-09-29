@@ -4,6 +4,12 @@ callback:
   player_only: "§cThis command can only be used by a player."
 
 island:
+  help: |
+    §b§lKGAcidIsland
+    §7/island create §f- Create your island
+    §7/island home §f- Teleport to your island
+    §7/island template §f- Manage island template
+
   already_exists: "§cKamu sudah memiliki island."
   created: "§aIsland berhasil dibuat."
   teleported: "§aTeleport ke island."
@@ -12,9 +18,16 @@ island:
 
 template:
   no_permission: "§cKamu tidak memiliki permission untuk mengubah template."
-  help: "§7/island template pos1 §f- Set posisi pertama\n§7/island template pos2 §f- Set posisi kedua\n§7/island template add §f- Simpan template\n§7/island template clear §f- Hapus selection"
+
+  help: |
+    §7/island template pos1 §f- Set posisi pertama
+    §7/island template pos2 §f- Set posisi kedua
+    §7/island template add §f- Simpan template
+    §7/island template clear §f- Hapus selection
+
   pos1: "§aPosisi pertama disimpan: §f{x}, {y}, {z}"
   pos2: "§aPosisi kedua disimpan: §f{x}, {y}, {z}"
+
   saved: "§aTemplate berhasil disimpan. §f{blocks} block§a tersimpan."
   cleared: "§aSelection template dihapus."
   failed: "§cGagal menyimpan template. Periksa console."

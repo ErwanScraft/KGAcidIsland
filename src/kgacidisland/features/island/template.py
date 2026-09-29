@@ -2,6 +2,7 @@ from endstone import Player
 
 from .model import Island
 
+
 class IslandTemplate:
     def __init__(self, plugin) -> None:
         super().__init__()
@@ -64,12 +65,30 @@ class IslandTemplate:
                 "Both template positions are required."
             )
 
-        min_x = min(pos1[0], pos2[0])
-        max_x = max(pos1[0], pos2[0])
-        min_y = min(pos1[1], pos2[1])
-        max_y = max(pos1[1], pos2[1])
-        min_z = min(pos1[2], pos2[2])
-        max_z = max(pos1[2], pos2[2])
+        min_x = min(
+            pos1[0],
+            pos2[0],
+        )
+        max_x = max(
+            pos1[0],
+            pos2[0],
+        )
+        min_y = min(
+            pos1[1],
+            pos2[1],
+        )
+        max_y = max(
+            pos1[1],
+            pos2[1],
+        )
+        min_z = min(
+            pos1[2],
+            pos2[2],
+        )
+        max_z = max(
+            pos1[2],
+            pos2[2],
+        )
 
         size_x = max_x - min_x + 1
         size_y = max_y - min_y + 1
@@ -102,9 +121,9 @@ class IslandTemplate:
             min_z + max_z
         ) // 2
 
-        palette = []
-        palette_index = {}
-        blocks = []
+        palette: list[str] = []
+        palette_index: dict[str, int] = {}
+        blocks: list[list[int]] = []
 
         for y in range(
             min_y,
@@ -186,7 +205,10 @@ class IslandTemplate:
             "",
         )
 
-        if not world_name:
+        if not isinstance(
+            world_name,
+            str,
+        ) or not world_name:
             raise RuntimeError(
                 "Island world is not configured."
             )
@@ -259,6 +281,18 @@ class IslandTemplate:
                 "starter.yml 'palette' must be a list."
             )
 
+        if any(
+            not isinstance(
+                block_type,
+                str,
+            ) or not block_type
+            for block_type in palette
+        ):
+            raise RuntimeError(
+                "starter.yml 'palette' contains "
+                "an invalid block."
+            )
+
         if not isinstance(
             blocks,
             list,
@@ -293,12 +327,6 @@ class IslandTemplate:
             block_type = palette[
                 palette_id
             ]
-
-            if not isinstance(
-                block_type,
-                str,
-            ) or not block_type:
-                continue
 
             world.get_block_at(
                 island.origin_x + offset_x,
@@ -340,11 +368,11 @@ class IslandTemplate:
         except (
             TypeError,
             ValueError,
-        ):
+        ) as error:
             raise RuntimeError(
                 "starter.yml 'platform.radius' "
                 "must be an integer."
-            )
+            ) from error
 
         layers = template.get(
             "layers",
@@ -369,7 +397,12 @@ class IslandTemplate:
             try:
                 layer_y = (
                     island_y
-                    + int(layer.get("y", 0))
+                    + int(
+                        layer.get(
+                            "y",
+                            0,
+                        )
+                    )
                 )
             except (
                 TypeError,
@@ -464,7 +497,9 @@ class IslandTemplate:
                 x,
                 y + offset,
                 z,
-            ).set_type(trunk)
+            ).set_type(
+                trunk
+            )
 
         for dx in range(-2, 3):
             for dz in range(-2, 3):
@@ -474,4 +509,6 @@ class IslandTemplate:
                             x + dx,
                             y + dy,
                             z + dz,
-                        ).set_type(leaves)
+                        ).set_type(
+                            leaves
+                        )

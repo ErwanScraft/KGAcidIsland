@@ -40,12 +40,34 @@ class ToxicWaterHandler:
         self._task_started = True
 
     def _tick(self) -> None:
-        water_level = (
-            self.plugin.config_manager.get_int(
-                "acid.water_level",
-                50,
-            )
+        config = self.plugin.config_manager
+
+        water_level = config.get_int(
+            "acid.water_level",
+            50,
         )
+
+        world_only = config.get_bool(
+            "acid.world_only",
+            True,
+        )
+
+        configured_world = config.get(
+            "island.world",
+            "",
+        )
+
+        if (
+            world_only
+            and isinstance(
+                configured_world,
+                str,
+            )
+            and configured_world
+            and self.plugin.server.level.name
+            != configured_world
+        ):
+            return
 
         for player in self.plugin.server.online_players:
             if not isinstance(
@@ -53,7 +75,7 @@ class ToxicWaterHandler:
                 Player,
             ):
                 continue
-                
+
             if player.game_mode in (
                 GameMode.CREATIVE,
                 GameMode.SPECTATOR,
@@ -70,24 +92,75 @@ class ToxicWaterHandler:
                 int(location.y),
                 int(location.z),
             )
-            
+
             if block.type != "minecraft:water":
                 block = player.dimension.get_block_at(
                     int(location.x),
                     int(location.y + 1),
                     int(location.z),
                 )
-            
+
             if block.type != "minecraft:water":
                 continue
-            
+
             self._damage(player)
 
     def _damage(
         self,
         player: Player,
     ) -> None:
+        config = self.plugin.config_manager
+
+        effect = config.get(
+            "acid.damage.effect",
+            {},
+        )
+
+        if not isinstance(
+            effect,
+            dict,
+        ):
+            return
+
+        effect_type = effect.get(
+            "type",
+            "poison",
+        )
+
+        if not isinstance(
+            effect_type,
+            str,
+        ) or not effect_type.strip():
+            effect_type = "poison"
+
+        duration = max(
+            1,
+            config.get_int(
+                "acid.damage.effect.duration",
+                2,
+            ),
+        )
+
+        amplifier = max(
+            0,
+            config.get_int(
+                "acid.damage.effect.amplifier",
+                0,
+            ),
+        )
+
+        hide_particles = config.get_bool(
+            "acid.damage.effect.hide_particles",
+            True,
+        )
+
         self.plugin.server.dispatch_command(
             self.plugin.server.console_sender,
-            f"effect {player.name} poison 2 0 true",
+            (
+                f"effect {player.name} "
+                f"{effect_type} "
+                f"{duration} "
+                f"{amplifier} "
+                f"{str(hide_particles).lower()}"
+            ),
         )

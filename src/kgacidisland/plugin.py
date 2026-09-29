@@ -70,3 +70,12 @@ class KGAcidIsland(Plugin):
         self.logger.info(
             f"Loaded {self.island_manager.count} island(s)."
         )
+
+    def on_disable(self) -> None:
+        if not hasattr(self, "island_manager"):
+            return
+
+        try:
+            self.island_manager.save()
+        except RuntimeError as error:
+            self.logger.error(str(error))

@@ -7,13 +7,25 @@ from .model import Island
 class IslandManager:
     def __init__(self, plugin) -> None:
         super().__init__()
+
         self.plugin = plugin
-        self.config = plugin.config_manager
+        self.config_manager = plugin.config_manager
 
         self._islands: dict[str, Island] = {}
 
+        storage_file = self.config_manager.get(
+            "storage.islands_file",
+            "islands.json",
+        )
+
+        if not isinstance(
+            storage_file,
+            str,
+        ) or not storage_file.strip():
+            storage_file = "islands.json"
+
         self._data_path = (
-            Path(plugin.data_folder) / "islands.json"
+            Path(plugin.data_folder) / storage_file
         )
 
     @property
@@ -36,13 +48,14 @@ class IslandManager:
             json.JSONDecodeError,
         ) as error:
             self.plugin.logger.error(
-                f"Failed to load islands.json: {error}"
+                f"Failed to load {self._data_path.name}: "
+                f"{error}"
             )
             return
 
         if not isinstance(data, dict):
             self.plugin.logger.error(
-                "Invalid islands.json format."
+                f"Invalid {self._data_path.name} format."
             )
             return
 
@@ -99,7 +112,7 @@ class IslandManager:
             parents=True,
             exist_ok=True,
         )
-    
+
         data = {
             owner_uuid: {
                 "grid_x": island.grid_x,
@@ -110,11 +123,11 @@ class IslandManager:
             }
             for owner_uuid, island in self._islands.items()
         }
-    
+
         temp_path = self._data_path.with_suffix(
-            ".json.tmp"
+            f"{self._data_path.suffix}.tmp"
         )
-    
+
         try:
             with temp_path.open(
                 "w",
@@ -126,22 +139,23 @@ class IslandManager:
                     indent=2,
                 )
                 file.write("\n")
-    
+
             temp_path.replace(
                 self._data_path
             )
-    
+
         except OSError as error:
-            self.plugin.logger.error(
-                f"Failed to save islands.json: {error}"
-            )
-    
             try:
                 temp_path.unlink(
                     missing_ok=True
                 )
             except OSError:
                 pass
+
+            raise RuntimeError(
+                f"Failed to save "
+                f"{self._data_path.name}: {error}"
+            ) from error
 
     def get_island(
         self,
@@ -168,7 +182,7 @@ class IslandManager:
 
         island_size = max(
             1,
-            self.config.get_int(
+            self.config_manager.get_int(
                 "island.size",
                 128,
             ),
@@ -176,23 +190,23 @@ class IslandManager:
 
         spacing = max(
             0,
-            self.config.get_int(
+            self.config_manager.get_int(
                 "island.spacing",
                 8,
             ),
         )
 
-        origin_x = self.config.get_int(
+        origin_x = self.config_manager.get_int(
             "island.origin.x",
             500,
         )
 
-        origin_z = self.config.get_int(
+        origin_z = self.config_manager.get_int(
             "island.origin.z",
             500,
         )
 
-        origin_y = self.config.get_int(
+        origin_y = self.config_manager.get_int(
             "island.y",
             100,
         )
@@ -227,9 +241,7 @@ class IslandManager:
         if owner_uuid not in self._islands:
             return False
 
-        del self._islands[
-            owner_uuid
-        ]
+        del self._islands[owner_uuid]
 
         self.save()
 
@@ -243,8 +255,7 @@ class IslandManager:
                 island.grid_x,
                 island.grid_z,
             )
-            for island
-            in self._islands.values()
+            for island in self._islands.values()
         }
 
         if (0, 0) not in occupied:

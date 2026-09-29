@@ -1,5 +1,5 @@
 island:
-  world: Acid Island
+  world: "Acid Island"
 
   size: 128
   spacing: 8
@@ -11,7 +11,7 @@ island:
   y: 100
 
   template:
-    file: starter.yml
+    file: "starter.yml"
     max_blocks: 32768
 
   spawn:
@@ -19,11 +19,21 @@ island:
     y: 4
     z: 0
 
+storage:
+  islands_file: "islands.json"
+
 acid:
   enabled: true
 
+  world_only: true
   water_level: 50
 
   damage:
     enabled: true
     interval: 20
+
+    effect:
+      type: "poison"
+      duration: 2
+      amplifier: 0
+      hide_particles: true

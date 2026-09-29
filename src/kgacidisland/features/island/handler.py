@@ -1,5 +1,10 @@
 from endstone import Player
-from endstone.command import Command, CommandExecutor, CommandSender
+from endstone.command import (
+    Command,
+    CommandExecutor,
+    CommandSender,
+)
+
 from .model import Island
 
 
@@ -30,24 +35,21 @@ class IslandHandler(CommandExecutor):
             self._send_help(sender)
             return True
 
-        action = args[0].lower()
+        match args[0].lower():
+            case "create":
+                self._create(sender)
 
-        if action == "create":
-            self._create(sender)
-            return True
+            case "home":
+                self._home(sender)
 
-        if action == "home":
-            self._home(sender)
-            return True
-            
-        if action == "template":
-            self._template(
-                sender,
-                args[1:],
-            )
-            return True
+            case "template":
+                self._template(
+                    sender,
+                    args[1:],
+                )
 
-        self._send_help(sender)
+            case _:
+                self._send_help(sender)
 
         return True
 
@@ -81,9 +83,9 @@ class IslandHandler(CommandExecutor):
             self.plugin.island_template.generate(
                 island
             )
-            
+
             self.plugin.island_manager.save()
-            
+
             self._teleport_home(
                 player,
                 island,
@@ -97,8 +99,9 @@ class IslandHandler(CommandExecutor):
 
         except Exception as error:
             if island is not None:
-                self.plugin.island_manager.remove_island(
-                    owner_uuid
+                self.plugin.island_manager._islands.pop(
+                    owner_uuid,
+                    None,
                 )
 
             self.plugin.logger.error(
@@ -136,85 +139,81 @@ class IslandHandler(CommandExecutor):
             )
             return
 
-        action = args[0].lower()
-
-        if action == "pos1":
-            self.plugin.island_template.set_pos1(
-                player
-            )
-
-            player.send_message(
-                self.plugin.messages.prefixed(
-                    "template.pos1",
-                    x=int(player.location.x),
-                    y=int(player.location.y),
-                    z=int(player.location.z),
-                )
-            )
-            return
-
-        if action == "pos2":
-            self.plugin.island_template.set_pos2(
-                player
-            )
-
-            player.send_message(
-                self.plugin.messages.prefixed(
-                    "template.pos2",
-                    x=int(player.location.x),
-                    y=int(player.location.y),
-                    z=int(player.location.z),
-                )
-            )
-            return
-
-        if action == "add":
-            try:
-                blocks = (
-                    self.plugin.island_template.capture(
-                        player
-                    )
-                )
-
-            except Exception as error:
-                self.plugin.logger.error(
-                    f"Failed to capture island template: "
-                    f"{type(error).__name__}: {error}"
+        match args[0].lower():
+            case "pos1":
+                self.plugin.island_template.set_pos1(
+                    player
                 )
 
                 player.send_message(
                     self.plugin.messages.prefixed(
-                        "template.failed"
+                        "template.pos1",
+                        x=int(player.location.x),
+                        y=int(player.location.y),
+                        z=int(player.location.z),
                     )
                 )
-                return
 
-            player.send_message(
-                self.plugin.messages.prefixed(
-                    "template.saved",
-                    blocks=blocks,
+            case "pos2":
+                self.plugin.island_template.set_pos2(
+                    player
                 )
-            )
-            return
 
-        if action == "clear":
-            self.plugin.island_template.clear_selection(
-                player
-            )
-
-            player.send_message(
-                self.plugin.messages.prefixed(
-                    "template.cleared"
+                player.send_message(
+                    self.plugin.messages.prefixed(
+                        "template.pos2",
+                        x=int(player.location.x),
+                        y=int(player.location.y),
+                        z=int(player.location.z),
+                    )
                 )
-            )
-            return
 
-        player.send_message(
-            self.plugin.messages.prefixed(
-                "template.help"
-            )
-        )
-        
+            case "add":
+                try:
+                    blocks = (
+                        self.plugin.island_template.capture(
+                            player
+                        )
+                    )
+
+                except Exception as error:
+                    self.plugin.logger.error(
+                        f"Failed to capture island template: "
+                        f"{type(error).__name__}: {error}"
+                    )
+
+                    player.send_message(
+                        self.plugin.messages.prefixed(
+                            "template.failed"
+                        )
+                    )
+                    return
+
+                player.send_message(
+                    self.plugin.messages.prefixed(
+                        "template.saved",
+                        blocks=blocks,
+                    )
+                )
+
+            case "clear":
+                self.plugin.island_template.clear_selection(
+                    player
+                )
+
+                player.send_message(
+                    self.plugin.messages.prefixed(
+                        "template.cleared"
+                    )
+                )
+
+            case _:
+                player.send_message(
+                    self.plugin.messages.prefixed(
+                        "template.help"
+                    )
+                )
+
     def _home(
         self,
         player: Player,
@@ -287,8 +286,7 @@ class IslandHandler(CommandExecutor):
         player: Player,
     ) -> None:
         player.send_message(
-            "§b§lKGAcidIsland\n"
-            "§7/island create §f- Create your island\n"
-            "§7/island home §f- Teleport to your island\n"
-            "§7/island template §f- Manage island template"
+            self.plugin.messages.prefixed(
+                "island.help"
+            )
         )
