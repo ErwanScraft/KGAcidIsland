@@ -1,9 +1,8 @@
-from endstone import Dimension
-
 from .model import Island
 
 class IslandTemplate:
     def __init__(self, plugin) -> None:
+        super().__init__()
         self.plugin = plugin
 
     def generate(
@@ -28,14 +27,7 @@ class IslandTemplate:
                 f"'{world_name}' was not found."
             )
         
-        world = next(
-            (
-                dimension
-                for dimension in level.dimensions
-                if dimension.type == Dimension.OVERWORLD
-            ),
-            None,
-        )
+        world = level.get_dimension("overworld")
         
         if world is None:
             raise RuntimeError(

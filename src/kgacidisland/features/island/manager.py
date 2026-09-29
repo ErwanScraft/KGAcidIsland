@@ -6,6 +6,7 @@ from .model import Island
 
 class IslandManager:
     def __init__(self, plugin) -> None:
+        super().__init__()
         self.plugin = plugin
         self.config = plugin.config_manager
 
